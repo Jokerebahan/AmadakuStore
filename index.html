@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toko Online</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .product-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 15px;
+            text-align: center;
+        }
+        .product-card img {
+            max-width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .product-card .price {
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        .add-to-cart {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .cart {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .checkout-btn {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: 5px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        #total {
+            font-weight: bold;
+            text-align: right;
+            margin-top: 15px;
+        }
+        @media (max-width: 600px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Toko Online</h1>
+        <p>Produk Berkualitas, Harga Terjangkau</p>
+    </div>
+
+    <div class="container">
+        <div class="product-grid" id="productContainer">
+            <!-- Produk akan dimuat dinamis -->
+        </div>
+
+        <div class="cart">
+            <h2>Keranjang Belanja</h2>
+            <div id="cartItems"></div>
+            <div id="total">Total: Rp 0</div>
+            <button id="checkoutBtn" class="checkout-btn">Checkout via WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        const products = [
+            {
+                id: 1,
+                name: "Kaos Polos Premium",
+                price: 89000,
+                image: "/api/placeholder/300/250?text=Kaos+Polos"
+            },
+            {
+                id: 2,
+                name: "Celana Jeans Slim Fit",
+                price: 199000,
+                image: "/api/placeholder/300/250?text=Celana+Jeans"
+            },
+            {
+                id: 3,
+                name: "Jaket Hoodie Distro",
+                price: 129000,
+                image: "/api/placeholder/300/250?text=Jaket+Hoodie"
+            }
+        ];
+
+        let cart = [];
+        const nomorWA = "083838325951"; // Ganti dengan nomor WhatsApp Anda
+
+        function renderProducts() {
+            const container = document.getElementById('productContainer');
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.classList.add('product-card');
+                productCard.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p class="price">Rp ${product.price.toLocaleString()}</p>
+                    <button onclick="tambahKeKeranjang(${product.id})" class="add-to-cart">
+                        Tambah ke Keranjang
+                    </button>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+
+        function tambahKeKeranjang(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingProduct = cart.find(item => item.id === productId);
+
+            if (existingProduct) {
+                existingProduct.quantity += 1;
+            } else {
+                cart.push({...product, quantity: 1});
+            }
+
+            renderCart();
+        }
+
+        function renderCart() {
+            const cartContainer = document.getElementById('cartItems');
+            const totalElement = document.getElementById('total');
+            
+            cartContainer.innerHTML = '';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                const cartItem = document.createElement('div');
+                cartItem.classList.add('cart-item');
+                cartItem.innerHTML = `
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>Rp ${(item.price * item.quantity).toLocaleString()}</span>
+                    <button onclick="hapusDariKeranjang(${index})">Hapus</button>
+                `;
+                cartContainer.appendChild(cartItem);
+                total += item.price * item.quantity;
+            });
+
+            totalElement.textContent = `Total: Rp ${total.toLocaleString()}`;
+        }
+
+        function hapusDariKeranjang(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('Keranjang masih kosong!');
+                return;
+            }
+
+            let pesanan = "Halo, saya ingin memesan:\n\n";
+            let total = 0;
+
+            cart.forEach(item => {
+                pesanan += `${item.name} x ${item.quantity} = Rp ${(item.price * item.quantity).toLocaleString()}\n`;
+                total += item.price * item.quantity;
+            });
+
+            pesanan += `\nTotal Pesanan: Rp ${total.toLocaleString()}`;
+
+            const encodedPesanan = encodeURIComponent(pesanan);
+            window.open(`https://wa.me/${nomorWA}?text=${encodedPesanan}`, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+            document.getElementById('checkoutBtn').addEventListener('click', checkout);
+        });
+    </script>
+</body>
+</html>
